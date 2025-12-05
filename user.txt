@@ -1,3 +1,0 @@
-user: alex-traza
-email :alexrhamos@gmail.com
-password: $2y$10$KIXQjE6m8n5bF1Fz6

@@ -1,0 +1,7 @@
+user: alex-traza
+email :alexrhamos@gmail.com
+password: $2y$10$KIXQjE6m8n5bF1Fz6
+
+comandos
+ source env/Scripts/activate
+ cd /c/code/python/wagtail_project/traza_app
