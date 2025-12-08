@@ -1,0 +1,52 @@
+{% extends "reportes/base.html" %}
+
+{% block title %}Dashboard | TrazaApp{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">
+  <span class="material-icons">dashboard</span>
+  Dashboard
+</h1>
+
+<div class="row g-4">
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h6>Cilindros Hoy</h6>
+        <h3 class="fw-bold">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h6>Trazados Hoy</h6>
+        <h3 class="fw-bold">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h6>Etiquetados Hoy</h6>
+        <h3 class="fw-bold">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h6>Total Hoy</h6>
+        <h3 class="fw-bold">0</h3>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
