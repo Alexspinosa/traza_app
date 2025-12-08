@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -8,22 +10,28 @@ from django.utils.timezone import localdate, now
 # REPORTE DIARIO
 # ============================================================
 class ReporteDiario(models.Model):
-    fecha = models.DateField(default=now, unique=True)
+    fecha = models.DateField(
+        default=now,
+        unique=True
+    )
     total_general = models.PositiveIntegerField(
         default=0,
-        editable=False,
+        editable=False
     )
 
-    def calcular_total(self) -> int:
+    if TYPE_CHECKING:
+        actividades: models.Manager["ActividadRegistrada"]
+
+    def calcular_total(self):
         total = sum(
             act.cantidad
-            for act in self.actividades.all()  # type: ignore
+            for act in self.actividades.all()
         )
         self.total_general = total
         self.save()
         return total
 
-    def __str__(self) -> str:
+    def __str__(self):
         fecha_txt = self.fecha.strftime("%d/%m/%Y")
         return f"Reporte {fecha_txt} — Total: {self.total_general}"
 
@@ -35,15 +43,19 @@ class ActividadRegistrada(models.Model):
     reporte = models.ForeignKey(
         ReporteDiario,
         related_name="actividades",
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE
     )
-    actividad = models.CharField(max_length=150)
-    cantidad = models.PositiveIntegerField(default=0)
+    actividad = models.CharField(
+        max_length=150
+    )
+    cantidad = models.PositiveIntegerField(
+        default=0
+    )
 
     class Meta:
         ordering = ["actividad"]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.actividad} ({self.cantidad})"
 
 
@@ -52,23 +64,23 @@ class ActividadRegistrada(models.Model):
 # ============================================================
 class ReporteMensual(models.Model):
     mes = models.DateField(
-        help_text="Guardar como día 1 del mes",
+        help_text="Guardar como día 1 del mes"
     )
     total_mes = models.PositiveIntegerField(
         default=0,
-        editable=False,
+        editable=False
     )
     variacion_porcentual = models.FloatField(
         default=0,
-        editable=False,
+        editable=False
     )
     actividad_destacada = models.CharField(
         max_length=150,
         null=True,
-        blank=True,
+        blank=True
     )
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.mes.strftime("Reporte Mensual — %B %Y")
 
 
@@ -78,19 +90,21 @@ class ReporteMensual(models.Model):
 class Nit(models.Model):
     codigo = models.CharField(
         max_length=50,
-        unique=True,
+        unique=True
     )
     fecha_creacion = models.DateTimeField(
-        auto_now_add=True,
+        auto_now_add=True
     )
     creado_por = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
-        null=True,
+        null=True
     )
-    activo = models.BooleanField(default=True)
+    activo = models.BooleanField(
+        default=True
+    )
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.codigo
 
 
@@ -106,23 +120,27 @@ class Cilindro(models.Model):
         ("EN_PINTOR", "En Pintor"),
     ]
 
-    numero_grabado = models.CharField(max_length=100)
+    numero_grabado = models.CharField(
+        max_length=100
+    )
     nit = models.OneToOneField(
         Nit,
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE
     )
-    fecha_ingreso = models.DateField(auto_now_add=True)
+    fecha_ingreso = models.DateField(
+        auto_now_add=True
+    )
     estado_actual = models.CharField(
         max_length=20,
         choices=ESTADOS,
-        default="RECIBIDO",
+        default="RECIBIDO"
     )
     observaciones = models.TextField(
         blank=True,
-        null=True,
+        null=True
     )
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.numero_grabado} - {self.nit.codigo}"
 
 
@@ -139,42 +157,41 @@ class Trazabilidad(models.Model):
     cilindro = models.ForeignKey(
         Cilindro,
         on_delete=models.CASCADE,
-        related_name="trazas",
+        related_name="trazas"
     )
     tipo_accion = models.CharField(
         max_length=20,
-        choices=ACCIONES,
+        choices=ACCIONES
     )
     usuario = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
-        null=True,
+        null=True
     )
-    fecha_hora = models.DateTimeField(auto_now_add=True)
-    comentario = models.TextField(blank=True, null=True)
+    fecha_hora = models.DateTimeField(
+        auto_now_add=True
+    )
+    comentario = models.TextField(
+        blank=True,
+        null=True
+    )
 
-    # --------------------------------------------------------
-    # Validación: no se puede trazar 2 veces el mismo día
-    # --------------------------------------------------------
-    def clean(self) -> None:
-        if self.tipo_accion != "TRAZADO":
-            return
+    def clean(self):
+        if self.tipo_accion == "TRAZADO":
+            hoy = localdate()
 
-        hoy = localdate()
-        existe = Trazabilidad.objects.filter(
-            cilindro=self.cilindro,
-            tipo_accion="TRAZADO",
-            fecha_hora__date=hoy,
-        ).exists()
+            existe = Trazabilidad.objects.filter(
+                cilindro=self.cilindro,
+                tipo_accion="TRAZADO",
+                fecha_hora__date=hoy,
+            ).exists()
 
-        if existe:
-            msg = "Este cilindro ya fue trazado el día de hoy."
-            raise ValidationError(msg)
+            if existe:
+                raise ValidationError(
+                    "Este cilindro ya fue trazado el día de hoy."
+                )
 
-    # --------------------------------------------------------
-    # Actualización de estado del cilindro
-    # --------------------------------------------------------
-    def save(self, *args, **kwargs) -> None:
+    def save(self, *args, **kwargs):
         es_nuevo = self._state.adding
         self.full_clean()
 
@@ -190,40 +207,30 @@ class Trazabilidad(models.Model):
         self.cilindro.save()
         super().save(*args, **kwargs)
 
-        # Registrar en Reporte Diario (solo si es nuevo)
         if not es_nuevo:
             return
 
-        self._registrar_en_reporte_diario()
-
-    # --------------------------------------------------------
-    # Registrar actividad diaria
-    # --------------------------------------------------------
-    def _registrar_en_reporte_diario(self) -> None:
         fecha_hoy = localdate()
 
         reporte, _ = ReporteDiario.objects.get_or_create(
-            fecha=fecha_hoy,
+            fecha=fecha_hoy
         )
 
-        nombre = dict(self.ACCIONES).get(
+        nombre_actividad = dict(self.ACCIONES).get(
             self.tipo_accion,
             self.tipo_accion,
         )
 
-        defaults = {"cantidad": 0}
-        actividad_obj, _ = (
-            ActividadRegistrada.objects.get_or_create(
-                reporte=reporte,
-                actividad=nombre,
-                defaults=defaults,
-            )
+        actividad_obj, _ = ActividadRegistrada.objects.get_or_create(
+            reporte=reporte,
+            actividad=nombre_actividad,
+            defaults={"cantidad": 0},
         )
 
-        actividad_obj.cantidad += 1
+        actividad_obj.cantidad = actividad_obj.cantidad + 1
         actividad_obj.save()
 
         reporte.calcular_total()
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.cilindro} - {self.tipo_accion}"
