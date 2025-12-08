@@ -192,6 +192,7 @@ class Trazabilidad(models.Model):
                 )
 
     def save(self, *args, **kwargs):
+        es_nuevo = self._state.adding
         self.full_clean()
 
         if self.tipo_accion == "ETIQUETADO":
@@ -205,6 +206,9 @@ class Trazabilidad(models.Model):
 
         self.cilindro.save()
         super().save(*args, **kwargs)
+
+        if not es_nuevo:
+            return
 
         fecha_hoy = localdate()
 
