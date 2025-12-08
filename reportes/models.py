@@ -179,6 +179,7 @@ class Trazabilidad(models.Model):
     def clean(self):
         if self.tipo_accion == "TRAZADO":
             hoy = localdate()
+
             existe = Trazabilidad.objects.filter(
                 cilindro=self.cilindro,
                 tipo_accion="TRAZADO",
@@ -204,6 +205,28 @@ class Trazabilidad(models.Model):
 
         self.cilindro.save()
         super().save(*args, **kwargs)
+
+        fecha_hoy = localdate()
+
+        reporte, _ = ReporteDiario.objects.get_or_create(
+            fecha=fecha_hoy
+        )
+
+        nombre_actividad = dict(self.ACCIONES).get(
+            self.tipo_accion,
+            self.tipo_accion,
+        )
+
+        actividad_obj, _ = ActividadRegistrada.objects.get_or_create(
+            reporte=reporte,
+            actividad=nombre_actividad,
+            defaults={"cantidad": 0},
+        )
+
+        actividad_obj.cantidad = actividad_obj.cantidad + 1
+        actividad_obj.save()
+
+        reporte.calcular_total()
 
     def __str__(self):
         return f"{self.cilindro} - {self.tipo_accion}"
